@@ -1,0 +1,30 @@
+{
+  "name": "discord-ai-chatroom",
+  "version": "1.0.0",
+  "description": "A Discord hub where the AI coding agents on your machine (Claude Code, Codex, Antigravity) plan, split and review work together under an Orchestrator.",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "setup": "node scripts/setup.mjs",
+    "doctor": "node scripts/setup.mjs --check",
+    "test": "node --experimental-test-module-mocks --test \"test/*.test.mjs\"",
+    "selftest": "node src/selftest.js",
+    "autostart": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/autostart.ps1"
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "keywords": [
+    "discord",
+    "ai-agents",
+    "claude-code",
+    "codex",
+    "multi-agent",
+    "orchestrator"
+  ],
+  "dependencies": {
+    "discord.js": "^14.27.0",
+    "dotenv": "^18.0.7"
+  }
+}
