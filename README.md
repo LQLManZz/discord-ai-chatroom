@@ -1,116 +1,155 @@
+<div align="center">
+
 # discord-ai-chatroom
 
-A Discord server that works as a hub for the AI coding agents already on your machine. An **Orchestrator** (Claude Opus via Claude Code) plans the work, splits it into tasks, hands them to cheaper **worker** agents (Claude Sonnet/Haiku, Gemini via Antigravity, DeepSeek via Codex), and reviews the result. You approve plans and get reports in Discord.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D22.13-339933?logo=node.js&logoColor=white)](https://nodejs.org)
+[![discord.js](https://img.shields.io/badge/discord.js-v14-5865F2?logo=discord&logoColor=white)](https://discord.js.org)
+[![Language](https://img.shields.io/badge/UI-English%20%7C%20Ti%E1%BA%BFng%20Vi%E1%BB%87t-blue)](#configuration)
 
-[Tiếng Việt](README.vi.md)
+Turn a Discord server into a control room for the AI coding agents on your machine.<br>
+An Orchestrator plans the work, a team of cheaper agents builds it, and you approve and review from Discord.
+
+[Features](#features) • [Getting started](#getting-started) • [Usage](#usage) • [Configuration](#configuration) • [How it works](#how-it-works) • [Tiếng Việt](README.vi.md)
+
+</div>
 
 ## Features
 
-- **Plan → approve → execute → review** loop, with tasks run in parallel along a dependency graph.
-- **No overwriting each other's work**: every task owns a set of files; tasks that share a file are serialized; the engine measures who actually changed what and flags conflicts to the Orchestrator. Files are backed up before each task.
-- **Agents talk through the Orchestrator**: a shared contract, structured handoffs, and requests/questions/blockers the Orchestrator must resolve.
-- **Quota-aware**: an agent out of quota pauses the job instead of failing it; progress is saved and the job resumes by itself after the reset (uses [onWatch](https://github.com/onllm-dev/onwatch) data when installed).
-- **Survives restarts**: jobs are saved to disk and resume where they stopped.
-- **Auto-detects agents**: only CLIs installed on the machine are offered to the Orchestrator.
-- **English / Vietnamese** UI (`LANGUAGE=en|vi`).
+- **One request, a whole team**: Claude Opus (through [Claude Code](https://docs.claude.com/en/docs/claude-code)) breaks your request into tasks and assigns each one to the best-value agent: Claude Sonnet or Haiku, Gemini (through Antigravity), DeepSeek (through Codex).
+- **You stay in control**: every plan waits for your approval; ask for changes with `!revise`.
+- **Agents don't overwrite each other**: each task owns its files, tasks sharing a file are run one after another, real changes are measured and conflicts go back to the Orchestrator. Files are backed up before every task.
+- **Agents talk through the Orchestrator**: shared contract, structured handoffs, and requests/questions the Orchestrator must resolve.
+- **Quota-aware**: an agent out of quota pauses the job instead of failing it, and the job resumes by itself after the reset.
+- **Built-in monitoring**: live dashboard, quota, health, activity and alert channels, created for you.
+- **Works with what you have**: agent CLIs installed on the machine are detected automatically.
 
-## How it works
+## Getting started
 
-```mermaid
-flowchart LR
-    U["!task ..."] --> O["Orchestrator<br/>(Claude Opus, read-only)"]
-    O -->|plan + file ownership| A{"You approve"}
-    A -->|!revise| O
-    A --> E["Engine: dependency graph,<br/>conflict guard, quota gate"]
-    E --> W["Workers<br/>Sonnet · Haiku · Gemini · DeepSeek"]
-    W -->|handoff| R["Orchestrator review"]
-    R -->|another round| A
-    R -->|done| F["Report in #reports"]
-```
+### Prerequisites
 
-On first start the bot builds this layout around your lobby channel:
+- [Node.js](https://nodejs.org) 22.13 or later
+- [Claude Code](https://docs.claude.com/en/docs/claude-code) installed and logged in (`claude`): required, it runs the Orchestrator
+- A Discord server where you can add a bot
 
-| Category | Channels |
-|---|---|
-| 🏢 AI HUB | your lobby (commands) · `📥-reports` — plans to approve, final reports, failures (you are @mentioned) |
-| 📡 MONITORING | `📊-dashboard` agents & job progress · `📈-quota` AI quotas · `🩺-health` bot/CLIs/machine · `🧾-activity` event log · `🚨-alerts` conflicts, failures, low quota |
-| 📁 WORKSPACES | one channel per project folder, one thread per job |
+Optional worker agents and tools:
 
-## Requirements
+| Tool | Adds | |
+|---|---|---|
+| [Antigravity](https://antigravity.google) (`agy`) | `gemini-flash` | UI, long context, research |
+| [Codex CLI](https://github.com/openai/codex) (`codex`) with a `deepseek` provider | `deepseek-flash` | cheap coding and tests |
+| [onWatch](https://github.com/onllm-dev/onwatch) | quota panel, quota-aware pausing | the bot keeps it running |
 
-- Node.js **22.13+**
-- [Claude Code](https://docs.claude.com/en/docs/claude-code) (`claude`), logged in — required for the Orchestrator
-- Optional workers: [Antigravity](https://antigravity.google) (`agy`), [Codex CLI](https://github.com/openai/codex) (`codex`) with a `deepseek` provider in `~/.codex/config.toml`
-- Optional: [onWatch](https://github.com/onllm-dev/onwatch) for the quota panel and quota-aware pausing
-- A Discord server you control
-
-## Quick start
+### Install
 
 ```bash
 git clone https://github.com/LQLManZz/discord-ai-chatroom.git
 cd discord-ai-chatroom
 npm install
 npm run setup
+```
+
+The setup wizard:
+
+1. Asks for your language (`en` or `vi`).
+2. Validates your bot token and prints an invite link for your server.
+3. Asks for the lobby channel ID and your Discord user ID.
+4. Detects the agent CLIs on your machine, writes `.env`, and runs a full check.
+
+> [!TIP]
+> Create the bot at <https://discord.com/developers/applications> → **Bot** → **Reset Token**, and turn on **Message Content Intent** on the same page. To copy IDs in Discord, enable **Settings → Advanced → Developer Mode**, then right-click a channel or your avatar.
+
+### Run
+
+```bash
 npm start
 ```
 
-`npm run setup` walks you through it:
+On first start the bot builds the server layout around your lobby channel. Type `!help` there to get started.
 
-1. Create an application at <https://discord.com/developers/applications> → **Bot** → **Reset Token**, and turn on **Message Content Intent**.
-2. Paste the token; the wizard prints an invite link (Administrator) for your server.
-3. Enable **Developer Mode** in Discord (Settings → Advanced), then paste the lobby channel ID and your user ID.
-4. Pick the language and default workspace folder. The wizard detects your agent CLIs, writes `.env`, and runs `npm run doctor`.
-
-Then type `!help` in the lobby.
-
-## Commands
-
-| Command | |
+| Category | Channels |
 |---|---|
-| `!task <request>` | Plan and run a job in the current workspace channel (or the default workspace from the lobby) |
-| `!task in <folder>: <request>` | Run in a specific folder (creates its channel) |
-| `!revise <feedback>` · `!approve` · `!cancel` | In a job thread; Approve/Cancel buttons also appear in `#reports` |
-| `!resume [job]` | Retry a job paused for quota now instead of waiting for the reset |
+| **AI HUB** | your lobby for commands · `📥-reports`, your inbox: plans to approve, final reports, failures (you are @mentioned) |
+| **MONITORING** | `📊-dashboard` · `📈-quota` · `🩺-health` · `🧾-activity` · `🚨-alerts` |
+| **WORKSPACES** | one channel per project folder, one thread per job |
+
+To keep the bot running in the background:
+
+- **Windows**: `npm run autostart` starts it at logon with no window and restarts it after a crash.
+- **macOS / Linux**: use a process manager, for example `pm2 start src/index.js --name ai-chatroom`.
+
+> [!NOTE]
+> Only one copy of the bot can run at a time. A second copy exits immediately instead of answering every command twice.
+
+## Usage
+
+```text
+!task in ~/projects/shop: add a /health endpoint with a test
+```
+
+1. The Orchestrator reads the code and posts a plan in a new thread: tasks, owners, files, dependencies.
+2. You press **Approve** (in the thread or in `#📥-reports`) or reply `!revise <feedback>`.
+3. Workers run in parallel where possible and post their reports; the dashboard shows who is doing what.
+4. The Orchestrator reviews the result, runs another round if needed, and sends the final report to `#📥-reports`.
+
+| Command | Description |
+|---|---|
+| `!task <request>` | Start a job in the current workspace channel (the default workspace from the lobby) |
+| `!task in <folder>: <request>` | Start a job in a specific folder; its channel is created if needed |
+| `!revise <feedback>` · `!approve` · `!cancel` | Control the job of the current thread |
+| `!resume [job]` | Retry a job paused for quota now |
 | `!ask <agent> <question>` | Ask one agent directly |
 | `!workspace [path]` | List workspaces, or add one and make it the default |
 | `!autonomy [add\|remove <path>]` | Let agents run shell commands in a folder |
-| `!files` · `!cat <file>` · `!diff` · `!run <cmd>` | Inspect the channel's workspace |
+| `!files` · `!cat <file>` · `!diff` · `!run <command>` | Look into the channel's workspace |
 | `!agents` · `!model <agent> <model>` · `!quota` · `!status` · `!jobs` · `!export` · `!clean` · `!hub` | System |
 
 ## Configuration
 
-Everything lives in `.env` (see [.env.example](.env.example)). The ones you are most likely to touch:
+Settings live in `.env`, created by `npm run setup`. See [.env.example](.env.example) for the full list.
 
-| Variable | Default | |
+| Variable | Default | Description |
 |---|---|---|
-| `LANGUAGE` | `en` | UI language, `en` or `vi`; agents report in it too (`CHAT_LANGUAGE` overrides) |
-| `ALLOWED_USER_IDS` | server owner | Who may command the bot and approve plans |
-| `AGENT_AUTONOMY` / `FULL_AUTONOMY_DIRS` | `safe` / `./workspace` | `safe`: agents edit files only · `full`: agents may run shell commands |
-| `AGENTS_DISABLED` | — | Agent keys to switch off even if installed |
-| `*_MODEL` | `opus`, `sonnet`, … | Model per agent; also `!model` at runtime |
-| `MAX_PARALLEL` · `MAX_ROUNDS` · `TASK_TIMEOUT_MIN` | `3` · `3` · `30` | Engine limits |
-| `QUOTA_STOP_PCT` · `QUOTA_ALERT_PCT` | `2` · `10` | Pause an agent / alert below this % (onWatch) |
-| `REPORT_DM` | `0` | Also DM you reports |
+| `LANGUAGE` | `en` | Interface language, `en` or `vi`. Agents report in the same language unless `CHAT_LANGUAGE` is set |
+| `ALLOWED_USER_IDS` | server owner | Users allowed to command the bot and approve plans |
+| `WORKSPACE_DIR` | `./workspace` | Default folder agents work in |
+| `AGENT_AUTONOMY` | `safe` | `safe`: agents edit files only. `full`: agents may also run shell commands |
+| `FULL_AUTONOMY_DIRS` | `./workspace` | Folders that always run in `full` mode |
+| `AGENTS_DISABLED` | | Agent keys to switch off even if their CLI is installed |
+| `ORCHESTRATOR_MODEL`, `SONNET_MODEL`, … | `opus`, `sonnet`, … | Model per agent; `!model` changes it at runtime |
+| `MAX_PARALLEL` / `MAX_ROUNDS` / `TASK_TIMEOUT_MIN` | `3` / `3` / `30` | Engine limits |
+| `QUOTA_STOP_PCT` / `QUOTA_ALERT_PCT` | `2` / `10` | Pause an agent / alert you below this quota % (needs onWatch) |
+| `REPORT_DM` | `0` | `1` also sends reports to you as a DM |
 
-Agents and their skills are defined in [src/agents.js](src/agents.js); the Orchestrator assigns work from the `skills` text.
+Agents, their CLIs and their skills are declared in [src/agents.js](src/agents.js). The Orchestrator picks agents from the `skills` text, so editing it changes how work is split.
 
-## Keep it running
+> [!WARNING]
+> Users in `ALLOWED_USER_IDS` can make agents edit files in your workspaces, and in full-autonomy folders run any shell command (`!run` included). Keep the list short and the bot on a private server.
 
-- **Windows**: `npm run autostart` registers a logon task that runs the bot with no window and restarts it if it crashes (`scripts/autostart.ps1 -Remove` to undo). Logs: `.chatroom/bot.log`.
-- **macOS / Linux**: use any process manager, e.g. `pm2 start src/index.js --name ai-chatroom`.
+## How it works
 
-Only one copy can run at a time (a second one exits immediately).
+```mermaid
+flowchart LR
+    U["!task"] --> O["Orchestrator<br/>Claude Opus · read-only"]
+    O -->|"plan, file ownership,<br/>shared contract"| A{"You approve"}
+    A -->|"!revise"| O
+    A --> E["Engine<br/>dependency graph · conflict guard · quota gate"]
+    E --> W["Workers<br/>Sonnet · Haiku · Gemini · DeepSeek"]
+    W -->|"structured handoff"| R["Orchestrator review"]
+    R -->|"another round"| A
+    R -->|"done"| F["#reports"]
+```
+
+- Each agent is a headless CLI call (`claude -p`, `agy`, `codex exec`) in the workspace folder.
+- Plans, reports, handoffs, backups and job state are saved in `<workspace>/.chatroom/jobs/<id>/`, so jobs survive a restart.
+- Run `npm run doctor` any time to check your token, intent, permissions, agent CLIs and onWatch.
 
 ## Development
 
 ```bash
-npm test         # engine, conflicts, quota pause/resume, i18n — fake agents, no quota used
-npm run doctor   # check .env, Discord token/intent/permissions, agent CLIs, onWatch
+npm test          # engine, conflicts, quota pause/resume, i18n, with fake agents (no quota used)
+npm run doctor    # environment check
+npm run privacy   # scan the repository for secrets and personal data
 ```
 
-Job artifacts (plans, reports, handoffs, backups, state) are written to `<workspace>/.chatroom/jobs/<id>/`.
-
-## Security
-
-- Anyone in `ALLOWED_USER_IDS` can make agents edit files in your workspaces, and in **full autonomy** folders run arbitrary shell commands (`!run` included). Keep that list short and the bot in a private server.
-- The bot reads its token from `.env`; never commit it (it is git-ignored).
+Contributions are welcome, see [CONTRIBUTING.md](CONTRIBUTING.md).

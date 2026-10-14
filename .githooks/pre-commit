@@ -1,0 +1,3 @@
+#!/bin/sh
+# Refuse commits that add secrets or personal data (see scripts/privacy-check.mjs)
+exec node scripts/privacy-check.mjs --staged

@@ -3,6 +3,7 @@ import 'dotenv/config';
 import fs from 'node:fs';
 import path from 'node:path';
 import net from 'node:net';
+import os from 'node:os';
 import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
 import {
@@ -75,7 +76,7 @@ function inside(root, rel) {
 
 /** A user-supplied workspace folder must already exist (a typo must not create folders). */
 const existingDir = (p) => {
-  const full = path.resolve(p);
+  const full = path.resolve(p.replace(/^~(?=$|[\\/])/, os.homedir()));
   return fs.existsSync(full) && fs.statSync(full).isDirectory() ? full : null;
 };
 

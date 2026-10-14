@@ -1,6 +1,14 @@
+# Dependencies
 node_modules/
+
+# Personal settings and secrets: never published (scripts/privacy-check.mjs enforces this)
 .env
-.env.bak
+.env.*
+!.env.example
+.privacy-blocklist
+.claude/settings.local.json
+
+# Runtime state, logs and the agents' working folder
 .chatroom/
 workspace/
 jobs/

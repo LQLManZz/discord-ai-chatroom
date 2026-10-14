@@ -1,0 +1,4 @@
+#!/bin/sh
+# Last gate before anything reaches GitHub: scan every tracked file, then run the tests
+node scripts/privacy-check.mjs --all || exit 1
+exec npm test --silent

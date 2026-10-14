@@ -10,7 +10,9 @@
     "doctor": "node scripts/setup.mjs --check",
     "test": "node --experimental-test-module-mocks --test \"test/*.test.mjs\"",
     "selftest": "node src/selftest.js",
-    "autostart": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/autostart.ps1"
+    "autostart": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/autostart.ps1",
+    "privacy": "node scripts/privacy-check.mjs --all",
+    "prepare": "node scripts/privacy-check.mjs --install"
   },
   "engines": {
     "node": ">=22.13"
@@ -26,5 +28,15 @@
   "dependencies": {
     "discord.js": "^14.27.0",
     "dotenv": "^18.0.7"
+  },
+  "license": "MIT",
+  "author": "TenlaLong",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LQLManZz/discord-ai-chatroom.git"
+  },
+  "homepage": "https://github.com/LQLManZz/discord-ai-chatroom#readme",
+  "bugs": {
+    "url": "https://github.com/LQLManZz/discord-ai-chatroom/issues"
   }
 }
