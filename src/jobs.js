@@ -305,7 +305,8 @@ export async function plan(job, { feedback } = {}) {
 export async function approve(job) {
   if (job.status !== 'awaiting_approval') return false;
   setStatus(job, 'running');
-  execute(job).catch((e) => fail(job, t('eng.jobError', { msg: e.message })));
+  // Next tick: the first tasks snapshot the whole workspace synchronously, which must not delay the caller
+  setImmediate(() => execute(job).catch((e) => fail(job, t('eng.jobError', { msg: e.message }))));
   return true;
 }
 

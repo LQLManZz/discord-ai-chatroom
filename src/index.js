@@ -550,21 +550,29 @@ client.on('messageCreate', async (msg) => {
 client.on('interactionCreate', async (i) => {
   if (!i.isButton()) return;
   const [action, id] = i.customId.split(':');
-  if (!allowed(i.user.id, i.guild)) return i.reply({ content: t('err.permission'), flags: MessageFlags.Ephemeral });
-  const job = jobs.get(id);
-  if (!job) return i.reply({ content: t('button.gone'), flags: MessageFlags.Ephemeral });
+  try {
+    if (!allowed(i.user.id, i.guild)) return await i.reply({ content: t('err.permission'), flags: MessageFlags.Ephemeral });
+    const job = jobs.get(id);
+    if (!job) return await i.reply({ content: t('button.gone'), flags: MessageFlags.Ephemeral });
 
-  // The same buttons sit in the job thread and in #reports: clear both, whichever was clicked
-  if (action === 'approve') {
-    if (!(await approve(job))) return i.reply({ content: t('approve.badState', { status: statusLabel(job.status) }), flags: MessageFlags.Ephemeral });
+    // Discord drops an interaction not acknowledged within 3s: ack first, starting a job can take longer
     await i.deferUpdate();
-    await closeApproval(job, t('approve.done', { user: i.user.id, round: job.round }));
-  } else {
-    await cancel(job);
-    await i.deferUpdate();
-    await closeApproval(job, t('cancel.by', { id: job.id, user: i.user.id }));
+    // The same buttons sit in the job thread and in #reports: clear both, whichever was clicked
+    if (action === 'approve') {
+      if (!(await approve(job))) return await i.followUp({ content: t('approve.badState', { status: statusLabel(job.status) }), flags: MessageFlags.Ephemeral });
+      await closeApproval(job, t('approve.done', { user: i.user.id, round: job.round }));
+    } else {
+      await cancel(job);
+      await closeApproval(job, t('cancel.by', { id: job.id, user: i.user.id }));
+    }
+  } catch (e) {
+    // An expired interaction (10062) or any Discord hiccup must never take the bot (and its running jobs) down
+    console.error(`button ${i.customId}:`, e.message);
   }
 });
+
+client.on('error', (e) => console.error('discord client:', e.message));
+process.on('unhandledRejection', (e) => console.error('unhandled rejection:', e?.stack || e));
 
 // ---------- Startup ----------
 
